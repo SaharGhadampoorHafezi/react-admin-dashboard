@@ -1,16 +1,20 @@
+import { KanbanAddCardButton } from "@/components/tasks/kanban/add-card-button";
 import {
   KanbanBoard,
   KanbanBoardContainer,
 } from "@/components/tasks/kanban/board";
+import { ProjectCard, ProjectCardMemo } from "@/components/tasks/kanban/card";
 import { KanbanColumn } from "@/components/tasks/kanban/column";
 import { KanbanItem } from "@/components/tasks/kanban/item";
 import { TASK_STAGES_QUERY, TASKS_QUERY } from "@/graphql/queries";
 import { TaskStage } from "@/graphql/schema.types";
+import { TasksQuery } from "@/graphql/types";
 import { useList } from "@refinedev/core";
+import { GetFieldsFromList } from "@refinedev/nestjs-query";
 import React from "react";
 
 export const List = () => {
-  const { data: stages, isLoading: isLoadingStages } = useList({
+  const { data: stages, isLoading: isLoadingStages } = useList<TaskStage>({
     resource: "taskStages",
     filters: [
       {
@@ -30,7 +34,9 @@ export const List = () => {
     },
   });
 
-  const { data: tasks, isLoading: isLoadingTasks } = useList({
+  const { data: tasks, isLoading: isLoadingTasks } = useList<
+    GetFieldsFromList<TasksQuery>
+  >({
     resource: "tasks",
     sorters: [
       {
@@ -39,7 +45,7 @@ export const List = () => {
       },
     ],
     pagination: {
-      mode: 'off'
+      mode: "off",
     },
     queryOptions: {
       enabled: !!stages,
@@ -59,13 +65,11 @@ export const List = () => {
     const unasignedStage = tasks.data.filter((task) => task.stageId === null);
     const grouped: TaskStage[] = stages.data.map((stage) => ({
       ...stage,
-      tasks: tasks.data.filter((task) => task.stageId === stage.id),
+      tasks: tasks.data.filter((task) => task.stageId?.toString() === stage.id),
     }));
   }, [stages, tasks]);
 
-  const handleAddCard = (args: {stageId: string}) => {
-
-  }
+  const handleAddCard = (args: { stageId: string }) => {};
 
   console.log(tasks);
 
@@ -73,10 +77,28 @@ export const List = () => {
     <>
       <KanbanBoardContainer>
         <KanbanBoard>
-          <KanbanColumn id='unasigned' title={"unasigned"} count={taskStages?.unasignedStage.length || 0} onAddClick={() => handleAddCard({stageId: 'unasigned'})}>
-            <KanbanItem>this is my first to do</KanbanItem>
+          <KanbanColumn
+            id="unasigned"
+            title={"unasigned"}
+            count={taskStages?.unasignedStage.length || 0}
+            onAddClick={() => handleAddCard({ stageId: "unasigned" })}
+          >
+            {taskStages?.unasignedStage.map((task) => (
+              <KanbanItem
+                key={task.id}
+                id={task.id}
+                data={{ ...task, stageId: "unasigned" }}
+              >
+                <ProjectCardMemo
+                  {...task}
+                  dueDate={task.dueDate || undefined}
+                />
+              </KanbanItem>
+            ))}
+            {!taskStages?.unasignedStage.length && (
+              <KanbanAddCardButton onClick={() => handleAddCard({stageId: 'unasigned'})} />
+            ) }
           </KanbanColumn>
-          <KanbanColumn></KanbanColumn>
         </KanbanBoard>
       </KanbanBoardContainer>
     </>

@@ -16,8 +16,8 @@ export const KanbanItem = ({
   data,
 }: React.PropsWithChildren<Props>) => {
   const { attributes, listeners, setNodeRef, active } = useDraggable({
-    id: "",
-    data: "",
+    id,
+    data,
   });
   return (
     <div
